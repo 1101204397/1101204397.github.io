@@ -117,13 +117,11 @@ git push origin master
 ```
 
 2. 在浏览器打开仓库设置：  
-   `https://github.com/1101204397/1101204397.tcl.git.io/settings/pages`
+   `https://github.com/1101204397/1101204397.github.io/settings/pages`
 
 3. **Source** 选择 `master` 分支 → `/ (root)` 目录 → 点 **Save**
 
-4. 等 1-2 分钟，你的站点将在以下地址生效：
-   - `https://1101204397.github.io/1101204397.tcl.git.io/`（如果用当前仓库名）
-   - 或将仓库重命名为 `1101204397.github.io` 后访问 `https://1101204397.github.io/`
+4. 等 1-2 分钟，你的站点将在 `https://1101204397.github.io` 生效
 
 ---
 
