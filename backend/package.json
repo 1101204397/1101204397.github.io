@@ -1,0 +1,16 @@
+{
+  "name": "1101204397-backend",
+  "version": "0.1.0",
+  "private": true,
+  "description": "个人站点后端 API — Express + MySQL",
+  "scripts": {
+    "dev": "node server.js",
+    "init-db": "mysql -u root -p < init.sql"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^17.4.2",
+    "express": "^4.18.2",
+    "mysql2": "^3.6.0"
+  }
+}
