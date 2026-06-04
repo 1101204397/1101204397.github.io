@@ -187,12 +187,6 @@ a {
   object-fit: cover;
 }
 
-.avatar-placeholder {
-  font-size: 3rem;
-  font-weight: 700;
-  color: var(--color-accent);
-  font-family: var(--font-sans);
-}
 
 .hero-title {
   font-size: 2.8rem;

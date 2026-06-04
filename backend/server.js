@@ -126,6 +126,114 @@ app.get('/api/posts/:slug', async (req, res) => {
   }
 });
 
+/* ============================================
+   文章 CRUD
+   ============================================ */
+
+/**
+ * POST /api/posts — 创建文章
+ * Body: { category_id, title, content?, summary?, tags?, status? }
+ */
+app.post('/api/posts', async (req, res) => {
+  try {
+    const { category_id, title, content, summary, tags, status } = req.body;
+
+    if (!category_id || !title) {
+      return res.status(400).json({ error: 'category_id 和 title 为必填项' });
+    }
+
+    // 自动生成 slug：从标题转写 + 时间戳防重复（总长 ≤ 191）
+    const baseSlug = title
+      .toLowerCase()
+      .replace(/[^\w\u4e00-\u9fa5]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .substring(0, 170) || `post-${Date.now()}`;
+    const slug = `${baseSlug}-${Date.now()}`.substring(0, 191);
+
+    const [result] = await pool.query(
+      `INSERT INTO posts (category_id, title, slug, content, summary, tags, status)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [
+        category_id,
+        title,
+        slug,
+        content || '',
+        summary || null,
+        tags || null,
+        status || 'draft',
+      ]
+    );
+
+    res.status(201).json({
+      data: { id: result.insertId, slug },
+      message: '文章创建成功',
+    });
+  } catch (err) {
+    console.error('[DB] create post error:', err.message);
+    res.status(500).json({ error: '文章创建失败' });
+  }
+});
+
+/**
+ * PUT /api/posts/:id — 更新文章
+ * Body: { category_id?, title?, content?, summary?, tags?, status? }
+ */
+app.put('/api/posts/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { category_id, title, content, summary, tags, status } = req.body;
+
+    // 构建动态 UPDATE 语句
+    const fields = [];
+    const params = [];
+
+    if (category_id !== undefined) { fields.push('category_id = ?'); params.push(category_id); }
+    if (title !== undefined)       { fields.push('title = ?');       params.push(title); }
+    if (content !== undefined)     { fields.push('content = ?');     params.push(content); }
+    if (summary !== undefined)     { fields.push('summary = ?');     params.push(summary); }
+    if (tags !== undefined)        { fields.push('tags = ?');         params.push(tags); }
+    if (status !== undefined)      { fields.push('status = ?');       params.push(status); }
+
+    if (fields.length === 0) {
+      return res.status(400).json({ error: '没有提供需要更新的字段' });
+    }
+
+    params.push(id);
+    const [result] = await pool.query(
+      `UPDATE posts SET ${fields.join(', ')} WHERE id = ?`,
+      params
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: '文章不存在' });
+    }
+
+    res.json({ message: '文章更新成功' });
+  } catch (err) {
+    console.error('[DB] update post error:', err.message);
+    res.status(500).json({ error: '文章更新失败' });
+  }
+});
+
+/**
+ * DELETE /api/posts/:id — 删除文章
+ */
+app.delete('/api/posts/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const [result] = await pool.query('DELETE FROM posts WHERE id = ?', [id]);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: '文章不存在' });
+    }
+
+    res.json({ message: '文章已删除' });
+  } catch (err) {
+    console.error('[DB] delete post error:', err.message);
+    res.status(500).json({ error: '文章删除失败' });
+  }
+});
+
 /**
  * POST /api/visit — 记录访问
  */
