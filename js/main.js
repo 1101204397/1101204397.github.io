@@ -148,12 +148,7 @@ function setupNavbarScroll() {
   if (!navbar) return;
 
   window.addEventListener('scroll', () => {
-    const currentScroll = window.scrollY;
-    if (currentScroll > 80) {
-      navbar.style.borderBottomColor = 'var(--color-border)';
-    } else {
-      navbar.style.borderBottomColor = 'transparent';
-    }
+    navbar.classList.toggle('scrolled', window.scrollY > 80);
   }, { passive: true });
 }
 

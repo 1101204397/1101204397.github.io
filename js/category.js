@@ -105,7 +105,7 @@ function setupNavbarScroll() {
   const navbar = document.querySelector('.navbar');
   if (!navbar) return;
   window.addEventListener('scroll', () => {
-    navbar.style.borderBottomColor = window.scrollY > 80 ? 'var(--color-border)' : 'transparent';
+    navbar.classList.toggle('scrolled', window.scrollY > 80);
   }, { passive: true });
 }
 
