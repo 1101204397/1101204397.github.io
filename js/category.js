@@ -2,7 +2,7 @@
  * category.js — 分类页面共享逻辑
  *
  * 每个分类页引入此脚本，自动根据文件名加载对应分类的内容。
- * 优先从本地 API (localhost:3001) 获取数据，不可用时显示空状态。
+ * 本地环境优先从 API 获取数据；线上环境直接展示静态 HTML。
  */
 
 /* ============================================
@@ -20,8 +20,12 @@ const CATEGORY_META = {
 /* ============================================
    工具函数
    ============================================ */
+function isLocal() {
+  const host = window.location.hostname;
+  return host === 'localhost' || host === '127.0.0.1';
+}
+
 function getCurrentSlug() {
-  // 从 URL 中提取文件名作为分类标识
   const path = window.location.pathname;
   const match = path.match(/\/(\w+)\.html$/);
   return match ? match[1] : null;
@@ -35,21 +39,27 @@ function formatDate(iso) {
 }
 
 /* ============================================
-   API 请求
+   API 请求（仅本地环境调用）
    ============================================ */
 const API_BASE = 'http://localhost:3001/api';
 
 async function fetchPosts(categorySlug) {
+  // 线上环境 → 跳过 API 请求（避免 CORS 错误）
+  if (!isLocal()) {
+    window.__API_AVAILABLE = false;
+    return [];
+  }
+
   try {
     const url = `${API_BASE}/posts?category=${categorySlug}&limit=50&status=published`;
     const res = await fetch(url);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
     const data = await res.json();
     window.__API_AVAILABLE = true;
     return data.data || [];
-  } catch {
+  } catch (_) {
     window.__API_AVAILABLE = false;
-    return []; // 线上 → 无 API → 保留静态内容
+    return [];
   }
 }
 
@@ -60,7 +70,7 @@ function renderHeader(slug) {
   const meta = CATEGORY_META[slug];
   if (!meta) return;
 
-  document.title = `${meta.title} · 1101204397`;
+  document.title = meta.title + ' · 1101204397';
 
   const titleEl = document.getElementById('categoryTitle');
   const descEl = document.getElementById('categoryDesc');
@@ -90,30 +100,36 @@ function renderPosts(posts) {
   }
 
   if (empty) empty.style.display = 'none';
-  if (count) count.textContent = `${posts.length} 篇文章`;
+  if (count) count.textContent = posts.length + ' 篇文章';
 
-  list.innerHTML = posts.map((post) => `
-    <a href="../post/index.html?slug=${encodeURIComponent(post.slug)}" class="post-item" style="display:block;">
-      <div class="post-meta">
-        <span class="post-date">${formatDate(post.created_at)}</span>
-        ${post.tags ? `<span class="post-tags">${post.tags.split(',').map(t => `<span class="tag">${t.trim()}</span>`).join('')}</span>` : ''}
-      </div>
-      <h3 class="post-title">${post.title}</h3>
-      ${post.summary ? `<p class="post-summary">${post.summary}</p>` : ''}
-      <div class="post-footer">
-        <span class="post-views">${post.view_count || 0} 次阅读</span>
-      </div>
-    </a>
-  `).join('');
+  list.innerHTML = posts.map(function(post) {
+    var tagsHtml = '';
+    if (post.tags) {
+      tagsHtml = post.tags.split(',').map(function(t) {
+        return '<span class="tag">' + t.trim() + '</span>';
+      }).join('');
+    }
+    return '<a href="../post/index.html?slug=' + encodeURIComponent(post.slug) + '" class="post-item" style="display:block;">' +
+      '<div class="post-meta">' +
+        '<span class="post-date">' + formatDate(post.created_at) + '</span>' +
+        (tagsHtml ? '<span class="post-tags">' + tagsHtml + '</span>' : '') +
+      '</div>' +
+      '<h3 class="post-title">' + post.title + '</h3>' +
+      (post.summary ? '<p class="post-summary">' + post.summary + '</p>' : '') +
+      '<div class="post-footer">' +
+        '<span class="post-views">' + (post.view_count || 0) + ' 次阅读</span>' +
+      '</div>' +
+    '</a>';
+  }).join('');
 }
 
 /* ============================================
    导航栏滚动
    ============================================ */
 function setupNavbarScroll() {
-  const navbar = document.querySelector('.navbar');
+  var navbar = document.querySelector('.navbar');
   if (!navbar) return;
-  window.addEventListener('scroll', () => {
+  window.addEventListener('scroll', function() {
     navbar.classList.toggle('scrolled', window.scrollY > 80);
   }, { passive: true });
 }
@@ -122,19 +138,22 @@ function setupNavbarScroll() {
    移动端菜单
    ============================================ */
 function setupMobileMenu() {
-  const toggle = document.querySelector('.mobile-toggle');
-  const navLinks = document.querySelector('.nav-links');
+  var toggle = document.querySelector('.mobile-toggle');
+  var navLinks = document.querySelector('.nav-links');
   if (!toggle || !navLinks) return;
 
-  toggle.addEventListener('click', () => {
+  toggle.addEventListener('click', function() {
     navLinks.style.display = navLinks.style.display === 'flex' ? 'none' : 'flex';
   });
-  navLinks.querySelectorAll('.nav-link').forEach((link) => {
-    link.addEventListener('click', () => {
+
+  var links = navLinks.querySelectorAll('.nav-link');
+  for (var i = 0; i < links.length; i++) {
+    links[i].addEventListener('click', function() {
       if (window.innerWidth <= 768) navLinks.style.display = 'none';
     });
-  });
-  window.addEventListener('resize', () => {
+  }
+
+  window.addEventListener('resize', function() {
     navLinks.style.display = window.innerWidth > 768 ? 'flex' : 'none';
   });
 }
@@ -142,8 +161,8 @@ function setupMobileMenu() {
 /* ============================================
    初始化
    ============================================ */
-document.addEventListener('DOMContentLoaded', async () => {
-  const slug = getCurrentSlug();
+document.addEventListener('DOMContentLoaded', async function() {
+  var slug = getCurrentSlug();
   if (!slug || !CATEGORY_META[slug]) {
     document.body.innerHTML = '<p style="text-align:center;padding:120px 24px;color:#999;">分类不存在</p>';
     return;
@@ -153,6 +172,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupNavbarScroll();
   setupMobileMenu();
 
-  const posts = await fetchPosts(slug);
+  var posts = await fetchPosts(slug);
   renderPosts(posts);
 });

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>文章 · 1101204397</title>
   <meta name="description" content="文章详情">
-  <link rel="icon" type="image/svg+xml" href="../data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%231a1a1a'/%3E%3Ctext x='16' y='23' text-anchor='middle' fill='%23fff' font-size='18' font-family='system-ui'%3E⌘%3C/text%3E%3C/svg%3E">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%231a1a1a'/%3E%3Ctext x='16' y='23' text-anchor='middle' fill='%23fff' font-size='18' font-family='system-ui'%3E⌘%3C/text%3E%3C/svg%3E">
   <link rel="stylesheet" href="../css/style.css">
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <style>
@@ -126,32 +126,36 @@
       return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
     }
 
+    function isLocal() {
+      var host = window.location.hostname;
+      return host === 'localhost' || host === '127.0.0.1';
+    }
+
     function showError(title, desc) {
       document.getElementById('postLoading').style.display = 'none';
       document.getElementById('postDetail').style.display = 'none';
-      const err = document.getElementById('postError');
+      var err = document.getElementById('postError');
       err.style.display = 'block';
       document.getElementById('errorTitle').textContent = title || '文章加载失败';
       document.getElementById('errorDesc').textContent = desc || '请确保本地后端 API 已启动';
     }
 
     function renderPost(post) {
-      document.title = `${post.title} · 1101204397`;
+      document.title = post.title + ' · 1101204397';
 
-      const catSlug = post.category_slug;
+      var catSlug = post.category_slug;
       document.getElementById('breadcrumbCategory').innerHTML =
-        `<a href="../category/${catSlug}.html">${post.category_name}</a>`;
+        '<a href=\"../category/' + catSlug + '.html\">' + post.category_name + '</a>';
 
       document.getElementById('postTitle').textContent = post.title;
       document.getElementById('postDate').textContent = formatDate(post.created_at);
       document.getElementById('postCategory').textContent = post.category_name;
-      document.getElementById('postCategory').href = `../category/${catSlug}.html`;
+      document.getElementById('postCategory').href = '../category/' + catSlug + '.html';
 
-      // tags 可能是数组或逗号分隔字符串
-      const tags = Array.isArray(post.tags) ? post.tags.join(', ') : (post.tags || '');
+      var tags = Array.isArray(post.tags) ? post.tags.join(', ') : (post.tags || '');
       document.getElementById('postTags').textContent = tags;
 
-      const contentEl = document.getElementById('postContent');
+      var contentEl = document.getElementById('postContent');
       if (typeof marked !== 'undefined') {
         contentEl.innerHTML = marked.parse(post.content || '');
       } else {
@@ -163,59 +167,33 @@
     }
 
     async function loadPost() {
-      const slug = getSlug();
+      var slug = getSlug();
       if (!slug) { showError('缺少文章参数', 'URL 中请指定 ?slug=xxx'); return; }
 
-      // 1) 优先尝试本地 API
-      try {
-        const res = await fetch(`${API_BASE}/posts/${encodeURIComponent(slug)}`);
-        if (res.ok) {
-          const json = await res.json();
-          if (json.data) { renderPost(json.data); return; }
-        }
-      } catch (_) { /* 静默 → 走兜底 */ }
-
-      // 2) 兜底：从静态 JSON 加载
-      try {
-        const res = await fetch('../data/posts.json');
-        if (!res.ok) throw new Error('JSON not found');
-        const data = await res.json();
-        const post = data.posts.find(p => p.slug === slug);
-        if (post) { renderPost(post); return; }
-      } catch (_) { /* 静默 → 显示错误 */ }
-
-      showError('文章加载失败', `无法找到文章「${slug}」。本地请启动后端：node backend/server.js`);
-
-        // 更新页面信息
-        document.title = `${post.title} · 1101204397`;
-
-        // 面包屑
-        const catSlug = post.category_slug;
-        document.getElementById('breadcrumbCategory').innerHTML =
-          `<a href="../category/${catSlug}.html">${post.category_name}</a>`;
-
-        // 头部
-        document.getElementById('postTitle').textContent = post.title;
-        document.getElementById('postDate').textContent = formatDate(post.created_at);
-        document.getElementById('postCategory').textContent = post.category_name;
-        document.getElementById('postCategory').href = `../category/${catSlug}.html`;
-        document.getElementById('postTags').textContent = post.tags || '';
-
-        // 正文（Markdown 渲染）
-        const contentEl = document.getElementById('postContent');
-        if (typeof marked !== 'undefined') {
-          contentEl.innerHTML = marked.parse(post.content || '');
-        } else {
-          contentEl.textContent = post.content || '';
-        }
-
-        // 显示文章，隐藏 loading
-        document.getElementById('postLoading').style.display = 'none';
-        document.getElementById('postDetail').style.display = 'block';
-
-      } catch (err) {
-        showError('文章加载失败', `无法加载文章「${slug}」。请确保本地后端已启动：node backend/server.js`);
+      // 本地环境 → 尝试 API
+      if (isLocal()) {
+        try {
+          var res = await fetch(API_BASE + '/posts/' + encodeURIComponent(slug));
+          if (res.ok) {
+            var json = await res.json();
+            if (json.data) { renderPost(json.data); return; }
+          }
+        } catch (_) {}
       }
+
+      // 线上环境 → 从静态 JSON 加载
+      try {
+        var res = await fetch('../data/posts.json');
+        if (!res.ok) throw new Error('not found');
+        var data = await res.json();
+        var post = null;
+        for (var i = 0; i < data.posts.length; i++) {
+          if (data.posts[i].slug === slug) { post = data.posts[i]; break; }
+        }
+        if (post) { renderPost(post); return; }
+      } catch (_) {}
+
+      showError('文章加载失败', '无法找到文章「' + slug + '」。本地请启动后端：node backend/server.js');
     }
 
     document.addEventListener('DOMContentLoaded', loadPost);
