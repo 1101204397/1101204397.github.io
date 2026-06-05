@@ -67,14 +67,20 @@ const CATEGORIES = [
 /* ============================================
    获取真实文章数量（从本地 API）
    ============================================ */
+function isLocal() {
+  var host = window.location.hostname;
+  return host === 'localhost' || host === '127.0.0.1';
+}
+
 async function fetchPostCounts() {
+  if (!isLocal()) return null;
   try {
     const res = await fetch('http://localhost:3001/api/posts?limit=1');
     if (!res.ok) throw new Error('API unavailable');
     const data = await res.json();
     return data.pagination ? data.pagination.total : null;
-  } catch {
-    return null; // 静默失败——线上环境无后端 API
+  } catch (_) {
+    return null;
   }
 }
 
