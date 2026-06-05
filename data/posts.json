@@ -1,0 +1,102 @@
+{
+  "exported_at": "2026-06-05T07:52:33.887Z",
+  "total": 3,
+  "categories": [
+    {
+      "id": 1,
+      "slug": "docs",
+      "name": "文档",
+      "description": "技术文档、API 参考、架构笔记等系统性知识整理",
+      "count": 2
+    },
+    {
+      "id": 2,
+      "slug": "tutorials",
+      "name": "教程",
+      "description": "从入门到实践，AI 模型、数据库优化等手把手教程",
+      "count": 0
+    },
+    {
+      "id": 3,
+      "slug": "tools",
+      "name": "工具",
+      "description": "自研小工具、实用脚本、效率提升利器分享",
+      "count": 1
+    },
+    {
+      "id": 4,
+      "slug": "reviews",
+      "name": "测评",
+      "description": "AI 模型效果对比、数据库性能测试、工具横评",
+      "count": 0
+    },
+    {
+      "id": 5,
+      "slug": "projects",
+      "name": "项目",
+      "description": "开源项目、Side Project、实验性探索记录",
+      "count": 0
+    },
+    {
+      "id": 6,
+      "slug": "blog",
+      "name": "随笔",
+      "description": "技术思考、阅读笔记、工作总结与感悟",
+      "count": 0
+    }
+  ],
+  "posts": [
+    {
+      "id": 3,
+      "title": "数据库日常巡检脚本集 · 运维工具箱",
+      "slug": "数据库日常巡检脚本集-运维工具箱-1780645791453",
+      "summary": "一套拿来即用的数据库巡检脚本，覆盖 MySQL 健康检查、磁盘预警、慢查询分析、复制监控",
+      "content": "{\n  \"category_id\": 3,\n  \"title\": \"数据库日常巡检脚本集 · 运维工具箱\",\n  \"summary\": \"一套拿来即用的数据库巡检脚本，覆盖 MySQL 健康检查、磁盘预警、慢查询分析、复制监控等核心场景\",\n  \"tags\": \"数据库,运维,MySQL,脚本,Bash\",\n  \"status\": \"published\",\n  \"content\": \"# 数据库日常巡检脚本集 · 运维工具箱\\n\\n> 本文分享我在生产环境中每天使用的巡检脚本。所有脚本均已脱敏，复制后修改变量即可使用。\\n\\n---\\n\\n## 一、一键巡检脚本\\n\\n将以下内容保存为 `db_check.sh`，每天定时执行：\\n\\n```bash\\n#!/bin/bash\\n# db_check.sh — 数据库每日健康巡检\\n\\nMYSQL_HOST=\\\"${1:-localhost}\\\"\\nMYSQL_PORT=\\\"${2:-3306}\\\"\\nMYSQL_USER=\\\"root\\\"\\nMYSQL=\\\"mysql -h$MYSQL_HOST -P$MYSQL_PORT -u$MYSQL_USER -p$MYSQL_PASS\\\"\\n\\necho \\\"========================================\\\"\\necho \\\"  数据库健康巡检报告\\\"\\necho \\\"  主机: $MYSQL_HOST:$MYSQL_PORT\\\"\\necho \\\"  时间: $(date '+%Y-%m-%d %H:%M:%S')\\\"\\necho \\\"========================================\\\"\\n\\n# 1. 数据库存活检查\\necho \\\"[1/7] 数据库连通性\\\"\\nif $MYSQL -e \\\"SELECT 1 AS ping\\\" 2>/dev/null | grep -q 1; then\\n    echo \\\"  ✅ 数据库连接正常\\\"\\nelse\\n    echo \\\"  ❌ 数据库连接失败！\\\"\\n    exit 1\\nfi\\n\\n# 2. 连接数使用率\\necho \\\"[2/7] 连接数使用率\\\"\\n$MYSQL -e \\\"SELECT ROUND(100 * COUNT(*) / @@max_connections, 1) AS usage_pct, COUNT(*) AS current_conn, @@max_connections AS max_conn FROM information_schema.processlist;\\\"\\n\\n# 3. 慢查询统计（过去 24h）\\necho \\\"[3/7] 慢查询统计（24h）\\\"\\n$MYSQL -e \\\"SELECT COALESCE(SUM(query_time), 0) AS total_slow_ms, COALESCE(COUNT(*), 0) AS slow_count FROM mysql.slow_log WHERE start_time > NOW() - INTERVAL 1 DAY;\\\" || echo \\\"  未开启慢查询日志\\\"\\n\\n# 4. 复制状态\\necho \\\"[4/7] 主从复制状态\\\"\\nSLAVE_STATUS=$($MYSQL -e \\\"SHOW SLAVE STATUS\\\\\\\\G\\\" 2>/dev/null)\\nif [ -n \\\"$SLAVE_STATUS\\\" ]; then\\n    IO_RUNNING=$(echo \\\"$SLAVE_STATUS\\\" | grep \\\"Slave_IO_Running:\\\" | awk '{print $2}')\\n    SQL_RUNNING=$(echo \\\"$SLAVE_STATUS\\\" | grep \\\"Slave_SQL_Running:\\\" | awk '{print $2}')\\n    BEHIND=$(echo \\\"$SLAVE_STATUS\\\" | grep \\\"Seconds_Behind_Master:\\\" | awk '{print $2}')\\n    echo \\\"  IO 线程:    $IO_RUNNING\\\"\\n    echo \\\"  SQL 线程:   $SQL_RUNNING\\\"\\n    echo \\\"  复制延迟:   ${BEHIND:-NULL} 秒\\\"\\nelse\\n    echo \\\"  非从库模式，跳过复制检查\\\"\\nfi\\n\\n# 5. 表空间 TOP10\\necho \\\"[5/7] 空间占用 TOP 10\\\"\\n$MYSQL -e \\\"SELECT table_schema AS \\\\`库\\\\`, table_name AS \\\\`表\\\\`, ROUND((data_length + index_length) / 1024 / 1024, 1) AS \\\\`大小(MB)\\\\`, ROUND(data_free / 1024 / 1024, 1) AS \\\\`碎片(MB)\\\\` FROM information_schema.tables WHERE table_schema NOT IN ('information_schema','performance_schema','sys') ORDER BY data_length + index_length DESC LIMIT 10;\\\"\\n\\n# 6. 死锁检查\\necho \\\"[6/7] 最近死锁记录\\\"\\n$MYSQL -e \\\"SHOW ENGINE INNODB STATUS\\\\\\\\G\\\" | grep -A 20 \\\"LATEST DETECTED DEADLOCK\\\" || echo \\\"  无死锁记录\\\"\\n\\n# 7. 磁盘空间\\necho \\\"[7/7] 磁盘使用率\\\"\\ndf -h /data / /var/lib/mysql 2>/dev/null || df -h /\\n\\necho \\\"\\\"\\necho \\\"  巡检完成\\\"\\n```\\n\\n---\\n\\n## 二、磁盘预警脚本\\n\\n```bash\\n#!/bin/bash\\n# disk_warning.sh — 磁盘空间预警与自动清理\\n\\nTHRESHOLD_WARN=80\\nTHRESHOLD_CLEAN=90\\nDATA_DIR=\\\"/var/lib/mysql\\\"\\nUSAGE=$(df \\\"$DATA_DIR\\\" | awk 'NR==2 {print \\\\$5}' | tr -d '%')\\n\\nif [ \\\"$USAGE\\\" -ge \\\"$THRESHOLD_CLEAN\\\" ]; then\\n    echo \\\"磁盘 ${USAGE}%，开始清理...\\\"\\n    find /backup -name \\\"*.sql.gz\\\" -mtime +7 -delete\\n    mysql -e \\\"PURGE BINARY LOGS BEFORE NOW() - INTERVAL 3 DAY;\\\"\\n    echo \\\"清理完成\\\"\\nelif [ \\\"$USAGE\\\" -ge \\\"$THRESHOLD_WARN\\\" ]; then\\n    echo \\\"磁盘 ${USAGE}%，请注意\\\"\\nelse\\n    echo \\\"磁盘 ${USAGE}%，状态正常\\\"\\nfi\\n```\\n\\n---\\n\\n## 三、慢查询实时监控\\n\\n```sql\\n-- 当前正在运行的慢查询（执行超过 5 秒）\\nSELECT id, user, host, db, command,\\n       time AS seconds_running, state, info\\nFROM information_schema.processlist\\nWHERE command != 'Sleep' AND time > 5\\nORDER BY time DESC;\\n```\\n\\n---\\n\\n## 四、索引分析\\n\\n找出从未使用过的索引：\\n\\n```sql\\nSELECT t.TABLE_SCHEMA AS \\\\`库\\\\`, t.TABLE_NAME AS \\\\`表\\\\`,\\n       s.INDEX_NAME AS \\\\`索引\\\\`, s.COLUMN_NAME AS \\\\`列\\\\`\\nFROM information_schema.STATISTICS s\\nJOIN information_schema.TABLES t\\n  ON s.TABLE_SCHEMA = t.TABLE_SCHEMA AND s.TABLE_NAME = t.TABLE_NAME\\nLEFT JOIN performance_schema.table_io_waits_summary_by_index_usage p\\n  ON s.TABLE_SCHEMA = p.OBJECT_SCHEMA AND s.TABLE_NAME = p.OBJECT_NAME AND s.INDEX_NAME = p.INDEX_NAME\\nWHERE p.INDEX_NAME IS NULL\\n  AND s.INDEX_NAME != 'PRIMARY'\\n  AND t.TABLE_SCHEMA NOT IN ('mysql','sys','performance_schema','information_schema')\\nORDER BY t.TABLE_ROWS DESC;\\n```\\n\\n---\\n\\n## 五、快速诊断备忘录\\n\\n| 场景 | 命令 |\\n|------|------|\\n| 当前最慢的 5 个查询 | `SELECT * FROM information_schema.processlist ORDER BY time DESC LIMIT 5;` |\\n| 查看表大小 | `SELECT table_name, ROUND(((data_length+index_length)/1024/1024),2) AS size_mb FROM information_schema.tables WHERE table_schema='你的库';` |\\n| 查看当前事务 | `SELECT * FROM information_schema.innodb_trx ORDER BY trx_started LIMIT 10;` |\\n| 查看锁等待 | `SELECT * FROM sys.innodb_lock_waits;` |\\n| 查看连接来源 | `SELECT SUBSTRING_INDEX(host,':',1) AS ip, COUNT(*) AS connections FROM information_schema.processlist GROUP BY ip ORDER BY connections DESC;` |\\n\\n---\\n\\n## 六、定时任务配置\\n\\n```bash\\n# crontab -e\\n0 8 * * * /opt/scripts/db_check.sh >> /var/log/db_check/daily_\\\\$(date +\\\\\\\\%Y\\\\\\\\%m\\\\\\\\%d).log 2>&1\\n*/10 * * * * /opt/scripts/disk_warning.sh >> /var/log/disk_warn.log 2>&1\\n```\\n\\n---\\n\\n## 使用建议\\n\\n1. 密码等敏感信息放在 `.env` 文件中，脚本里 source 加载\\n2. 使用 `logrotate` 管理日志，避免磁盘写满\\n3. 复制中断 / 连接数超限 → 立即告警；慢查询增多 → 邮件通知\\n4. 所有脚本先在测试环境验证，再上生产\\n\\n> 脚本比人可靠，但维护脚本的人要更可靠。\\n\\n---\\n\\n*本文首发于 1101204397.github.io*\"\n}\n",
+      "tags": [
+        "数据库",
+        "运维",
+        "MySQL",
+        "脚本",
+        "Bash"
+      ],
+      "view_count": 0,
+      "created_at": "2026-06-05T07:49:51.000Z",
+      "category_slug": "tools",
+      "category_name": "工具"
+    },
+    {
+      "id": 2,
+      "title": "企业数据库运维实战指南",
+      "slug": "企业数据库运维实战指南-1780644707310",
+      "summary": "从监控、备份、优化到高可用，一套可落地的大规模数据库运维体系搭建经验",
+      "content": "# 企业数据库运维实战指南\n\n> 本文总结了过去几年在多个生产环境中搭建数据库运维体系的经验，涵盖监控、备份、性能优化、高可用架构和安全合规五个核心领域。\n\n---\n\n## 一、监控体系建设\n\n数据库监控是运维的「眼睛」，没有完善的监控，故障永远是在半夜发现的。\n\n### 1.1 监控的三个层次\n\n| 层次 | 指标 | 工具推荐 |\n|------|------|----------|\n| **基础设施** | CPU、内存、磁盘 IO、网络 | Prometheus + Node Exporter |\n| **数据库内核** | QPS、连接数、慢查询、死锁 | MySQL Exporter、Performance Schema |\n| **业务视角** | 响应时间、错误率、吞吐量 | 自研埋点 + Grafana |\n\n### 1.2 关键告警规则\n\n```yaml\n# 必须配置的告警（优先级从高到低）\n- 连接数超过阈值（如 > 80%）  → 立即告警\n- 复制延迟 > 30s               → 立即告警\n- 慢查询突增 > 5倍基线         → 5分钟内处理\n- 磁盘剩余空间 < 20%           → 提前扩容\n- 主从切换事件                  → 事后复盘\n```\n\n### 1.3 可视化面板\n\n一套好的 Grafana 面板应该能回答这三个问题：\n- **过去 5 分钟发生了什么？**（实时视图）\n- **过去 24 小时的趋势如何？**（日报视图）\n- **是否存在周期性规律？**（周/月对比）\n\n> 建议将面板分为「运维值班视图」和「研发排查视图」两类，避免信息过载。\n\n---\n\n## 二、备份与恢复策略\n\n「没有经过恢复演练的备份，等于没有备份。」\n\n### 2.1 备份方案设计\n\n```\n┌─────────────────────────────────────────┐\n│           备份策略矩阵                    │\n├────────────┬──────────┬─────────────────┤\n│  备份类型   │  频率     │  保留周期       │\n├────────────┼──────────┼─────────────────┤\n│  全量备份   │  每天     │  30 天          │\n│  增量备份   │  每 2h   │  7 天            │\n│  Binlog    │  实时     │  3 天（本地）    │\n│  逻辑备份   │  每周     │  90 天（归档）   │\n└────────────┴──────────┴─────────────────┘\n```\n\n### 2.2 恢复演练 checklist\n\n- [ ] 每月一次随机时间点的恢复演练\n- [ ] 演练环境与生产环境配置一致\n- [ ] 记录 RTO（恢复时间目标）和 RPO（恢复点目标）\n- [ ] 演练后输出报告，优化备份策略\n\n### 2.3 核心命令速查\n\n```bash\n# MySQL 全量备份（使用 Xtrabackup）\nxtrabackup --backup --target-dir=/backup/full/$(date +%Y%m%d)\n\n# MySQL 增量备份\nxtrabackup --backup --target-dir=/backup/inc/$(date +%Y%m%d_%H) \\\n  --incremental-basedir=/backup/full/$(date +%Y%m%d)\n\n# 恢复\nxtrabackup --prepare --target-dir=/backup/full/20260401\nxtrabackup --copy-back --target-dir=/backup/full/20260401\n```\n\n---\n\n## 三、性能优化实践\n\n### 3.1 慢查询治理流程\n\n```\n发现慢查询 → 收集执行计划 → 索引分析 → SQL 改写 → 上线验证 → 固化规范\n```\n\n### 3.2 索引优化原则\n\n1. **最左前缀原则** — 联合索引从最左侧开始匹配\n2. **区分度优先** — 选择性越高的列放越前面\n3. **覆盖索引** — 尽量用索引覆盖查询，避免回表\n4. **避免冗余索引** — 联合索引 (a, b) 可以覆盖 (a) 的查询场景\n\n### 3.3 常见 SQL 优化案例\n\n**反面案例：**\n\n```sql\n-- 慢！不走索引\nSELECT * FROM orders WHERE YEAR(create_time) = 2026;\n```\n\n**优化后：**\n\n```sql\n-- 快！走索引范围扫描\nSELECT * FROM orders\nWHERE create_time >= \\2026-01-01\\\n  AND create_time < \\2027-01-01\\;\n```\n\n### 3.4 参数调优参考\n\n```ini\n# my.cnf 核心参数（以 32G 内存为例）\ninnodb_buffer_pool_size = 20G        # 缓冲池：物理内存的 60-70%\ninnodb_log_file_size = 2G            # Redo log：写密集型适当增大\ninnodb_flush_log_at_trx_commit = 2   # 性能优先设为 2，金融场景设为 1\nmax_connections = 500                 # 根据线程池和应用连接数合理设置\nlong_query_time = 1                  # 超过 1 秒记录慢查询\n```\n\n---\n\n## 四、高可用架构\n\n### 4.1 架构选型对比\n\n| 方案 | RTO | RPO | 适用场景 |\n|------|-----|-----|----------|\n| 主从异步复制 | 秒级 | 可能丢数据 | 一般业务 |\n| 半同步复制 | 秒级 | 基本不丢 | 核心业务 |\n| MySQL Group Replication | 秒级 | 不丢 | 金融级 |\n| MHA/Orchestrator | 10-30s | 取决于复制模式 | 传统运维 |\n\n### 4.2 推荐架构：一主二从 + Proxy\n\n```\n         ┌───────────┐\n         │  Proxy    │  ← ProxySQL / HAProxy\n         └─────┬─────┘\n               │\n     ┌─────────┼─────────┐\n     ▼         ▼         ▼\n  ┌──────┐ ┌──────┐ ┌──────┐\n  │ Master│ │Slave1 │ │Slave2 │\n  │   RW  │ │  RO   │ │  RO   │\n  └──────┘ └──────┘ └──────┘\n               │\n               ▼\n          ┌──────────┐\n          │ Backup   │\n          │ Server   │\n          └──────────┘\n```\n\n- **Master**：处理写请求，同时承担异步复制\n- **Slave1**：读流量 + 日常备份（备份在从库执行，不影响主库）\n- **Slave2**：读流量 + 统计分析查询\n- **Proxy**：自动检测主从状态，故障时切换\n\n### 4.3 故障切换流程\n\n```mermaid\nsequenceDiagram\n    Proxy->>Master: 心跳检测\n    Proxy->>Slave1: 心跳检测\n    Proxy->>Slave2: 心跳检测\n    Note over Proxy,Master: Master 宕机\n    Proxy->>Slave1: 提升为 New Master\n    Slave1->>Slave2: 重新配置复制关系\n    Proxy->>Slave1: 写流量切到 New Master\n    Note over Proxy,Slave1: 切换完成，应用无感知\n```\n\n---\n\n## 五、安全与合规\n\n### 5.1 最小权限原则\n\n```sql\n-- 创建专用只读账号\nCREATE USER \\readonly\\@\\10.%.%.%\\ IDENTIFIED BY \\xxx\\;\nGRANT SELECT ON mydb.* TO \\readonly\\@\\10.%.%.%\\;\n\n-- 应用账号按模块分库授权\nCREATE USER \\order_app\\@\\10.%.%.%\\ IDENTIFIED BY \\xxx\\;\nGRANT SELECT, INSERT, UPDATE, DELETE ON order_db.* TO \\order_app\\@\\10.%.%.%\\;\n```\n\n### 5.2 审计日志\n\n- 开启 MySQL 审计插件或 binlog 审计\n- 记录所有 DDL 变更操作\n- 敏感表（用户、支付）记录所有 SELECT 操作\n- 审计日志至少保留 6 个月\n\n### 5.3 日常安全操作规范\n\n1. **变更前必备份** — 任何 DDL 操作前先备份相关表\n2. **变更窗口** — 核心表 DDL 必须在业务低峰期执行\n3. **灰度执行** — 先在小表验证，再推到大表\n4. **回滚预案** — 每次变更必须准备好回滚脚本\n5. **操作记录** — 所有运维操作通过工单系统留痕\n\n---\n\n## 六、自动化运维\n\n### 6.1 运维工具栈推荐\n\n| 场景 | 工具 |\n|------|------|\n| 配置管理 | Ansible / SaltStack |\n| 容器化 | Docker + Kubernetes |\n| 自动化备份 | 自研脚本 + CronJob |\n| SQL 审核 | Yearning / Archery |\n| 数据迁移 | gh-ost / pt-online-schema-change |\n\n### 6.2 自动化巡检脚本示例\n\n```bash\n#!/bin/bash\n# 每日数据库巡检脚本\n\necho \"=== 数据库健康巡检: $(date) ===\"\n\n# 1. 检查复制状态\nmysql -e \\\"SHOW SLAVE STATUS\\\\G\\\" | grep -E \\\"Slave_IO_Running|Slave_SQL_Running|Seconds_Behind_Master\\\"\n\n# 2. 检查当前连接数\nmysql -e \\\"SELECT COUNT(*) AS connections FROM information_schema.processlist;\\\"\n\n# 3. 检查慢查询数量（过去 24h）\nmysql -e \\\"SELECT COUNT(*) AS slow_queries FROM mysql.slow_log\\\n  WHERE start_time > NOW() - INTERVAL 1 DAY;\\\"\n\n# 4. 检查表空间大小\nmysql -e \\\"\\\n  SELECT table_schema, ROUND(SUM(data_length+index_length)/1024/1024, 1) AS size_mb\\\n  FROM information_schema.tables GROUP BY table_schema ORDER BY size_mb DESC;\\\"\n\necho \"=== 巡检完成 ===\"\n```\n\n---\n\n## 七、总结\n\n企业数据库运维不是买了数据库就能高枕无忧的事情，它是一套持续建设、持续优化的体系：\n\n1. **监控**让你看得见问题\n2. **备份**让你出了问题能恢复\n3. **优化**让系统跑得更快更稳\n4. **高可用**让故障对业务无感\n5. **安全**让你睡得着觉\n6. **自动化**让你不再每天重复劳动\n\n> 运维的终极目标不是「不出故障」，而是「出了故障能快速恢复」。\n\n---\n\n*本文首发于 1101204397.github.io，转载请注明出处。*",
+      "tags": [
+        "数据库",
+        "运维",
+        "MySQL",
+        "高可用",
+        "性能优化"
+      ],
+      "view_count": 0,
+      "created_at": "2026-06-05T07:31:47.000Z",
+      "category_slug": "docs",
+      "category_name": "文档"
+    },
+    {
+      "id": 1,
+      "title": "MySQL 索引优化实战",
+      "slug": "mysql-索引优化实战-1780562476901",
+      "summary": "已更新摘要——MySQL 索引优化实战记录",
+      "content": "# MySQL 索引优化\n\n在实际项目中遇到的性能问题...",
+      "tags": [
+        "MySQL",
+        "索引",
+        "性能优化"
+      ],
+      "view_count": 1,
+      "created_at": "2026-06-04T08:41:16.000Z",
+      "category_slug": "docs",
+      "category_name": "文档"
+    }
+  ]
+}
