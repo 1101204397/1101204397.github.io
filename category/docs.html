@@ -37,7 +37,22 @@
   <!-- ========== 文章列表 ========== -->
   <section class="section" style="padding-top:0">
     <div class="container">
-      <div class="post-list" id="postList"></div>
+      <div class="post-list" id="postList">
+        <!-- 静态文章（当本地 API 不可用时展示） -->
+        <div class="static-posts">
+          <a href="../post/企业数据库运维实战指南.html" class="post-item" style="display:block;">
+            <div class="post-meta">
+              <span class="post-date">2026-06-05</span>
+              <span class="post-tags"><span class="tag">数据库</span><span class="tag">MySQL</span><span class="tag">运维</span></span>
+            </div>
+            <h3 class="post-title">企业数据库运维实战指南</h3>
+            <p class="post-summary">从监控、备份、优化到高可用，一套可落地的大规模数据库运维体系搭建经验</p>
+            <div class="post-footer">
+              <span class="post-views">1 次阅读</span>
+            </div>
+          </a>
+        </div>
+      </div>
 
       <!-- 空状态 -->
       <div class="empty-state" id="emptyState">

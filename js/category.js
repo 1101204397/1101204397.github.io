@@ -45,9 +45,11 @@ async function fetchPosts(categorySlug) {
     const res = await fetch(url);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
+    window.__API_AVAILABLE = true;
     return data.data || [];
   } catch {
-    return []; // 线上 → 无 API → 显示空状态
+    window.__API_AVAILABLE = false;
+    return []; // 线上 → 无 API → 保留静态内容
   }
 }
 
@@ -72,6 +74,13 @@ function renderPosts(posts) {
   const count = document.getElementById('postCount');
 
   if (!list) return;
+
+  // 线上环境（无 API）→ 保留静态 HTML，不覆盖
+  if (posts.length === 0 && !window.__API_AVAILABLE) {
+    if (empty) empty.style.display = 'none';
+    if (count) count.textContent = '';
+    return;
+  }
 
   if (posts.length === 0) {
     list.innerHTML = '';
