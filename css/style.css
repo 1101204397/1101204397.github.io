@@ -474,6 +474,19 @@ a {
   line-height: 1.7;
 }
 
+.card-count {
+  display: inline-block;
+  margin-top: 14px;
+  padding: 2px 12px;
+  font-size: 0.75rem;
+  color: var(--color-text-mute);
+  font-family: var(--font-mono);
+  background: var(--color-white);
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  letter-spacing: 0.3px;
+}
+
 /* ---- Footer ---- */
 .footer {
   border-top: 1px solid var(--color-border);

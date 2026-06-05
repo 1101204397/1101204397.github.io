@@ -1,13 +1,13 @@
 {
-  "exported_at": "2026-06-05T08:06:49.478Z",
-  "total": 3,
+  "exported_at": "2026-06-05T08:10:09.978Z",
+  "total": 2,
   "categories": [
     {
       "id": 1,
       "slug": "docs",
       "name": "文档",
       "description": "技术文档、API 参考、架构笔记等系统性知识整理",
-      "count": 2
+      "count": 1
     },
     {
       "id": 2,
@@ -63,24 +63,6 @@
       "created_at": "2026-06-05T07:49:51.000Z",
       "category_slug": "tools",
       "category_name": "工具"
-    },
-    {
-      "id": 2,
-      "title": "企业数据库运维实战指南",
-      "slug": "企业数据库运维实战指南-1780644707310",
-      "summary": "从监控、备份、优化到高可用，一套可落地的大规模数据库运维体系搭建经验",
-      "content": "# MySQL 索引优化实战\n\n> 一次 MySQL 慢查询优化的完整记录\n\n## 慢查询分析\n\n```sql\nSELECT * FROM information_schema.processlist\nWHERE command != 'Sleep'\nORDER BY time DESC\nLIMIT 10;\n```\n\n## 索引优化\n\n```sql\nALTER TABLE orders ADD INDEX idx_user_time (user_id, create_time);\n```\n\n## 总结\n\n优化后查询时间从 3.2s 降到 0.01s。\n",
-      "tags": [
-        "数据库",
-        "运维",
-        "MySQL",
-        "高可用",
-        "性能优化"
-      ],
-      "view_count": 0,
-      "created_at": "2026-06-05T07:31:47.000Z",
-      "category_slug": "docs",
-      "category_name": "文档"
     },
     {
       "id": 1,
