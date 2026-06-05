@@ -289,7 +289,7 @@ app.get('/api/health', (req, res) => {
 });
 
 /* ---- 启动 ---- */
-app.listen(PORT, () => {
+app.listen(PORT, '127.0.0.1', () => {
   console.log(`
   ┌──────────────────────────────────────────┐
   │  个人站点后端 API                          │
