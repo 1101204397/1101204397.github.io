@@ -531,6 +531,28 @@ a {
   color: var(--color-text-mute);
 }
 
+/* ---- Breadcrumb ---- */
+.breadcrumb {
+  padding: calc(var(--nav-height) + 16px) 0 0;
+  font-size: 0.82rem;
+  color: var(--color-text-mute);
+}
+
+.breadcrumb a {
+  color: var(--color-text-soft);
+  transition: var(--transition);
+}
+
+.breadcrumb a:hover {
+  color: var(--color-accent);
+}
+
+.breadcrumb-sep {
+  margin: 0 10px;
+  font-size: 0.75rem;
+  color: var(--color-border);
+}
+
 /* ---- Category Page ---- */
 .category-header {
   padding: calc(var(--nav-height) + 80px) 0 48px;
