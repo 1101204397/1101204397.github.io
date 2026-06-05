@@ -173,7 +173,7 @@
           const json = await res.json();
           if (json.data) { renderPost(json.data); return; }
         }
-      } catch { /* 静默 → 走兜底 */ }
+      } catch (_) { /* 静默 → 走兜底 */ }
 
       // 2) 兜底：从静态 JSON 加载
       try {
@@ -182,7 +182,7 @@
         const data = await res.json();
         const post = data.posts.find(p => p.slug === slug);
         if (post) { renderPost(post); return; }
-      } catch { /* 静默 → 显示错误 */ }
+      } catch (_) { /* 静默 → 显示错误 */ }
 
       showError('文章加载失败', `无法找到文章「${slug}」。本地请启动后端：node backend/server.js`);
 
