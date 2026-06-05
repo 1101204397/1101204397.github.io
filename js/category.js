@@ -93,7 +93,7 @@ function renderPosts(posts) {
   if (count) count.textContent = `${posts.length} 篇文章`;
 
   list.innerHTML = posts.map((post) => `
-    <article class="post-item">
+    <a href="../post/index.html?slug=${encodeURIComponent(post.slug)}" class="post-item" style="display:block;">
       <div class="post-meta">
         <span class="post-date">${formatDate(post.created_at)}</span>
         ${post.tags ? `<span class="post-tags">${post.tags.split(',').map(t => `<span class="tag">${t.trim()}</span>`).join('')}</span>` : ''}
@@ -103,7 +103,7 @@ function renderPosts(posts) {
       <div class="post-footer">
         <span class="post-views">${post.view_count || 0} 次阅读</span>
       </div>
-    </article>
+    </a>
   `).join('');
 }
 

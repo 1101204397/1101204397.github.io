@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>文章 · 1101204397</title>
+  <meta name="description" content="文章详情">
+  <link rel="icon" type="image/svg+xml" href="../data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%231a1a1a'/%3E%3Ctext x='16' y='23' text-anchor='middle' fill='%23fff' font-size='18' font-family='system-ui'%3E⌘%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="../css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <style>
+    /* ---- Post Detail ---- */
+    .post-detail { max-width: 780px; margin: 0 auto; padding: 80px 24px 100px; }
+    .post-detail .post-header { margin-bottom: 40px; padding-bottom: 24px; border-bottom: 1px solid var(--color-border); }
+    .post-detail .post-header h1 { font-size: clamp(1.6rem, 3.5vw, 2.2rem); font-weight: 800; letter-spacing: -1px; line-height: 1.3; margin-bottom: 16px; }
+    .post-detail .post-meta-bar { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; font-size: 0.85rem; color: var(--color-text-mute); }
+    .post-detail .post-meta-bar a { color: var(--color-accent); }
+    .post-detail .post-meta-bar a:hover { text-decoration: underline; }
+
+    .post-detail .content { font-size: 1rem; line-height: 1.85; color: var(--color-text); }
+    .post-detail .content h2 { font-size: 1.5rem; font-weight: 700; margin: 40px 0 16px; letter-spacing: -0.5px; padding-bottom: 8px; border-bottom: 1px solid var(--color-border); }
+    .post-detail .content h3 { font-size: 1.15rem; font-weight: 600; margin: 28px 0 12px; }
+    .post-detail .content p { margin-bottom: 16px; }
+    .post-detail .content ul, .post-detail .content ol { margin: 12px 0 16px 24px; }
+    .post-detail .content li { margin-bottom: 6px; }
+    .post-detail .content blockquote { border-left: 3px solid var(--color-accent); padding: 12px 20px; margin: 20px 0; background: var(--color-card-bg); border-radius: 0 8px 8px 0; font-style: italic; color: var(--color-text-soft); }
+    .post-detail .content pre { background: #1a1a1a; color: #f0f0f0; padding: 20px 24px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.6; margin: 16px 0 24px; font-family: var(--font-mono); }
+    .post-detail .content code { font-family: var(--font-mono); font-size: 0.85em; background: var(--color-card-bg); padding: 2px 6px; border-radius: 4px; }
+    .post-detail .content pre code { background: none; padding: 0; border-radius: 0; }
+    .post-detail .content table { width: 100%; border-collapse: collapse; margin: 16px 0 24px; font-size: 0.9rem; }
+    .post-detail .content th, .post-detail .content td { padding: 10px 14px; border: 1px solid var(--color-border); text-align: left; }
+    .post-detail .content th { background: var(--color-card-bg); font-weight: 600; }
+    .post-detail .content img { max-width: 100%; border-radius: 8px; margin: 20px 0; }
+    .post-detail .content hr { border: none; border-top: 1px solid var(--color-border); margin: 40px 0; }
+    .post-detail .content strong { font-weight: 700; }
+
+    /* Loading / Error state */
+    .post-loading, .post-error { max-width: 600px; margin: 120px auto; text-align: center; }
+    .post-loading svg, .post-error svg { margin-bottom: 20px; color: var(--color-text-mute); }
+    .post-loading h3, .post-error h3 { font-size: 1.2rem; font-weight: 600; margin-bottom: 8px; }
+    .post-loading p, .post-error p { color: var(--color-text-soft); font-size: 0.9rem; line-height: 1.7; }
+    .post-error .btn { margin-top: 20px; }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar">
+    <div class="container nav-inner">
+      <a href="../index.html" class="nav-logo">⌘ 1101204397</a>
+      <div class="nav-links">
+        <a href="../index.html#categories" class="nav-link">分类</a>
+        <a href="../index.html" class="nav-link">首页</a>
+        <a href="https://github.com/1101204397" target="_blank" rel="noopener" class="nav-link">GitHub</a>
+      </div>
+      <button class="mobile-toggle" aria-label="菜单"><span></span><span></span><span></span></button>
+    </div>
+  </nav>
+
+  <nav class="breadcrumb">
+    <div class="container" id="breadcrumbContainer">
+      <a href="../index.html">首页</a>
+      <span class="breadcrumb-sep">/</span>
+      <span id="breadcrumbCategory">文章</span>
+    </div>
+  </nav>
+
+  <!-- 加载状态 -->
+  <div class="post-loading" id="postLoading">
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="animation:spin 1.2s linear infinite;">
+      <circle cx="12" cy="12" r="10" opacity="0.3"/>
+      <path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"/>
+    </svg>
+    <h3>加载中...</h3>
+    <p>正在获取文章内容</p>
+    <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
+  </div>
+
+  <!-- 文章内容 -->
+  <article class="post-detail" id="postDetail" style="display:none;">
+    <div class="post-header">
+      <h1 id="postTitle"></h1>
+      <div class="post-meta-bar">
+        <span id="postDate"></span>
+        <span>·</span>
+        <a id="postCategory" href=""></a>
+        <span>·</span>
+        <span id="postTags"></span>
+      </div>
+    </div>
+    <div class="content" id="postContent"></div>
+  </article>
+
+  <!-- 错误状态 -->
+  <div class="post-error" id="postError" style="display:none;">
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
+    </svg>
+    <h3 id="errorTitle">文章加载失败</h3>
+    <p id="errorDesc">请确保本地后端 API 已启动（node backend/server.js）</p>
+    <a href="../index.html" class="btn btn-outline">返回首页</a>
+  </div>
+
+  <footer class="footer">
+    <div class="container footer-inner">
+      <div class="footer-left"><span class="footer-logo">⌘ 1101204397</span><p class="footer-desc">记录 · 沉淀 · 成长</p></div>
+      <div class="footer-right">
+        <a href="https://github.com/1101204397" target="_blank" rel="noopener" class="footer-link" title="GitHub"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg></a>
+        <a href="mailto:1101204397@qq.com" class="footer-link" title="Email"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></a>
+      </div>
+    </div>
+    <div class="container"><div class="footer-bottom"><p>&copy; 2025 1101204397. Built with ❤️</p></div></div>
+  </footer>
+
+  <script>
+    const API_BASE = 'http://localhost:3001/api';
+
+    function getSlug() {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('slug');
+    }
+
+    function formatDate(iso) {
+      if (!iso) return '';
+      const d = new Date(iso);
+      const pad = n => String(n).padStart(2, '0');
+      return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+    }
+
+    function showError(title, desc) {
+      document.getElementById('postLoading').style.display = 'none';
+      document.getElementById('postDetail').style.display = 'none';
+      const err = document.getElementById('postError');
+      err.style.display = 'block';
+      document.getElementById('errorTitle').textContent = title || '文章加载失败';
+      document.getElementById('errorDesc').textContent = desc || '请确保本地后端 API 已启动';
+    }
+
+    async function loadPost() {
+      const slug = getSlug();
+
+      if (!slug) {
+        showError('缺少文章参数', 'URL 中请指定 ?slug=xxx');
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_BASE}/posts/${encodeURIComponent(slug)}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const json = await res.json();
+        const post = json.data;
+        if (!post) throw new Error('文章不存在');
+
+        // 更新页面信息
+        document.title = `${post.title} · 1101204397`;
+
+        // 面包屑
+        const catSlug = post.category_slug;
+        document.getElementById('breadcrumbCategory').innerHTML =
+          `<a href="../category/${catSlug}.html">${post.category_name}</a>`;
+
+        // 头部
+        document.getElementById('postTitle').textContent = post.title;
+        document.getElementById('postDate').textContent = formatDate(post.created_at);
+        document.getElementById('postCategory').textContent = post.category_name;
+        document.getElementById('postCategory').href = `../category/${catSlug}.html`;
+        document.getElementById('postTags').textContent = post.tags || '';
+
+        // 正文（Markdown 渲染）
+        const contentEl = document.getElementById('postContent');
+        if (typeof marked !== 'undefined') {
+          contentEl.innerHTML = marked.parse(post.content || '');
+        } else {
+          contentEl.textContent = post.content || '';
+        }
+
+        // 显示文章，隐藏 loading
+        document.getElementById('postLoading').style.display = 'none';
+        document.getElementById('postDetail').style.display = 'block';
+
+      } catch (err) {
+        showError('文章加载失败', `无法加载文章「${slug}」。请确保本地后端已启动：node backend/server.js`);
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadPost);
+  </script>
+</body>
+</html>
